@@ -9,7 +9,9 @@ library(maps)
 # load data, which was scraped from wikipedia on Nov 16th, 2014
 polls <- read.csv("./data/PollingData.csv")
 politicians <- read.csv("./data//PoliticianData.csv")
-
+# States data from https://www.census.gov/popest/data/state/asrh/2013/files/SCPRC-EST2013-18+POP-RES.csv
+# Population for 18+
+states <- read.csv("./data/States.csv")
 
 #### Scrape data from Wikipedia ####
 # # Only do this if you want to update everything
@@ -45,7 +47,24 @@ politicians <- read.csv("./data//PoliticianData.csv")
 
 
 #### Clean data ####
+states <- states[2:53,]
+statesList <- as.character(states$NAME)
 
+# cut out wiki surrounding info
+d <- politicians[151:951,]
+
+# make a new column to fill in below
+d$State <- NA
+
+# This will fill in the column from above with the home state of each listed politician
+for(i in 1:801){
+  for (j in 1:52){
+    if((length(grep(statesList[j],d$doc.text[i]))) > 0) d$State[i] = statesList[j]
+  }
+}
+
+  
+  
 # http://uchicagoconsulting.wordpress.com/tag/r-ggplot2-maps-visualization/
 #load us map data
 all_states <- map_data("state")
@@ -58,7 +77,7 @@ p
 zest <- c("New Jersey", "California")
 d$test <- NA
 
-for(i in 1:1529){
+for(i in 1:801){
   for (j in 1:2){
     if((length(grep(zest[j],d$doc.text[i]))) > 0) d$test[i] = zest[j]
   }
