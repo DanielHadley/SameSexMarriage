@@ -5,13 +5,25 @@ setwd("/Users/dphnrome/Documents/Git/SameSexMarriage/")
 library(XML)
 library(ggplot2)
 library(maps)
+library(reshape2)
+library(plyr)
+# Maping tools
+require("rgdal") # requires sp, will use proj.4 if installed
+require("maptools")
+require("ggplot2")
+require("plyr")
+require("RColorBrewer")
+require("ggmap")
+
 
 # load data, which was scraped from wikipedia on Nov 16th, 2014
 polls <- read.csv("./data/PollingData.csv")
 politicians <- read.csv("./data//PoliticianData.csv")
+
 # States data from https://www.census.gov/popest/data/state/asrh/2013/files/SCPRC-EST2013-18+POP-RES.csv
 # Population for 18+
 states <- read.csv("./data/States.csv")
+
 
 #### Scrape data from Wikipedia ####
 # # Only do this if you want to update everything
@@ -63,14 +75,48 @@ for(i in 1:801){
   }
 }
 
-  
-  
+d$Tab <- 1
+
+# Make this to combine with states
+PolsByState <- dcast(d, State ~ Tab, sum) 
+
+PolsByState <- merge(states, PolsByState, by.x="NAME", by.y="State", all=T)
+
+PolsByState <- PolsByState[1:52,]
+PolsByState <- rename(PolsByState, c("1"="PolsWhoSupport"))
+PolsByState$PolsWhoSupport[is.na(PolsByState$PolsWhoSupport)] <- 0
+
+# I now normalize by the population over 18 yrs old
+PolsByState$PolsPerCapita <- PolsByState$PolsWhoSupport / PolsByState$POPEST18PLUS2013
+PolsByState$PolsPerMillion <- PolsByState$PolsPerCapita * 1000000
+
+
+#### Map it ####
 # http://uchicagoconsulting.wordpress.com/tag/r-ggplot2-maps-visualization/
 #load us map data
 all_states <- map_data("state")
+
+# Prep for the merge
+all_states$State <- gsub("\\b([a-z])([a-z]+)", "\\U\\1\\L\\2" ,all_states$region, perl=TRUE)
+
+all_states <- merge(all_states, PolsByState, by.x="State", by.y="NAME")
+
+# Map
+map <- get_map(location = "USA", zoom=4, maptype="roadmap", color = "bw")
+ggmap(map)
+
 #plot all states with ggplot
+ggmap(map) +
+  geom_polygon(data=all_states, aes(x=long, y=lat, group=group, fill=all_states$PolsPerMillion), colour=NA, alpha=0.7) +
+  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu")),labels=percent) +
+  labs(fill="") +
+  theme_nothing(legend=TRUE) + ggtitle("Percent of Votes for")
+
+# ggsave(paste("./plots/Map",i,".png",sep=""), dpi=300, width=6, height=5)
+
+
 p <- ggplot()
-p <- p + geom_polygon( data=all_states, aes(x=long, y=lat, group = group),colour="white", fill="grey10" )
+p <- p + geom_polygon( data=all_states, aes(x=long, y=lat, group = group),colour="white", fill=all_states$PolsPerMillion )
 p
 
 
