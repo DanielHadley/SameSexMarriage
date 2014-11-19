@@ -1,6 +1,7 @@
 # Created by Daniel Hadley to analyze the support for gay marriage
 # Nov, 2014
 setwd("/Users/dphnrome/Documents/Git/SameSexMarriage/")
+setwd("C:/Users/dhadley/Documents/GitHub/SameSexMarriage")
 
 library(XML)
 library(ggplot2)
@@ -77,8 +78,17 @@ for(i in 1:801){
 
 d$Tab <- 1
 
+
+# To differentiate between present and past politicans
+# I leave out mayors b/c the list is not current - many past mayors on the current list
+d$Current <- NA
+d$Current[c(8:64, 98:285, 401:418, 476:488, 520:544)] <- "Current" 
+
+d <- d[which(d$Current == "Current"),]
+
+
 # Make this to combine with states
-PolsByState <- dcast(d, State ~ Tab, sum) 
+PolsByState <- dcast(d, State ~ Tab) # , sum) not working for some reason 
 
 PolsByState <- merge(states, PolsByState, by.x="NAME", by.y="State", all=T)
 
@@ -98,33 +108,30 @@ all_states <- map_data("state")
 
 # Prep for the merge
 all_states$State <- gsub("\\b([a-z])([a-z]+)", "\\U\\1\\L\\2" ,all_states$region, perl=TRUE)
+all_states <- merge(all_states, PolsByState, by.x="State", by.y="NAME", all.x=T)
 
-all_states <- merge(all_states, PolsByState, by.x="State", by.y="NAME")
 
 # Map
-map <- get_map(location = "USA", zoom=4, maptype="roadmap", color = "bw")
+map <- get_map(location = "USA", zoom=3, maptype="roadmap", color = "bw")
 ggmap(map)
 
 #plot all states with ggplot
 ggmap(map) +
   geom_polygon(data=all_states, aes(x=long, y=lat, group=group, fill=all_states$PolsPerMillion), colour=NA, alpha=0.7) +
-  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu")),labels=percent) +
+  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu"))) +
   labs(fill="") +
-  theme_nothing(legend=TRUE) + ggtitle("Percent of Votes for")
+  theme_nothing(legend=TRUE) + ggtitle("Politicians Per Million")
 
-# ggsave(paste("./plots/Map",i,".png",sep=""), dpi=300, width=6, height=5)
+ggsave(paste("./plots/Map.png"), dpi=300, width=6, height=5)
 
 
 p <- ggplot()
-p <- p + geom_polygon( data=all_states, aes(x=long, y=lat, group = group),colour="white", fill=all_states$PolsPerMillion )
+p <- p + geom_polygon( data=all_states, aes(x=long, y=lat, group = group, fill=all_states$PolsPerMillion), colour=NA, alpha=1) +
+  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu"))) +
+  labs(fill="") +
+  theme_nothing(legend=TRUE) + ggtitle("Politicians Per Million")
 p
 
+ggsave(paste("./plots/Map2.png"), dpi=300, width=8, height=5)
 
-zest <- c("New Jersey", "California")
-d$test <- NA
 
-for(i in 1:801){
-  for (j in 1:2){
-    if((length(grep(zest[j],d$doc.text[i]))) > 0) d$test[i] = zest[j]
-  }
-}
