@@ -2,13 +2,16 @@
 # Created by Daniel Hadley to analyze the support for gay marriage
 # Nov, 2014
 setwd("/Users/dphnrome/Documents/Git/SameSexMarriage/")
-setwd("C:/Users/dhadley/Documents/GitHub/SameSexMarriage")
+# setwd("C:/Users/dhadley/Documents/GitHub/SameSexMarriage")
 
+
+#### Load packages and data ####
 library(XML)
 library(ggplot2)
 library(maps)
 library(reshape2)
 library(plyr)
+library(stringr)
 # Maping tools
 require("rgdal") # requires sp, will use proj.4 if installed
 require("maptools")
@@ -115,11 +118,36 @@ d$Tab <- 1
 # To differentiate between present and past politicans
 d$Current <- NA
 d$Current[c(8:64, 98:285, 401:418, 476:488, 520:544, 574:713)] <- "Current" 
+
+# To differentiate between ones we count and others
 # I leave out mayors, lieutenant governors & Attourneys General b/c the list is not as complete
 d$Count <- NA
 d$Count[c(8:64, 98:285, 401:418)] <- "Count" #eg, congress and governors
-
 d <- d[which(d$Count == "Count"),]
+
+# ID congress
+d$Congress <- NA
+d$Congress[c(1:245)] <- "Congress" 
+
+### Make a name column
+d$Name <- NA
+d$Name <- str_split_fixed(d$doc.text, "[[]", n = 2)[, 1]
+
+# To take out all of the filler without gsub (e.g. speaker of the ...)
+CongressList <- as.character(congress$wikipedia_id)
+CongressList <- gsub( " *\\(.*?\\) *", "", CongressList)
+
+for(i in 1:3){
+  for (j in 1:541){
+    if((length(grep(CongressList[j],d$doc.text[i]))) > 0) d$Name[i] = CongressList[j]
+  }
+}
+
+for(i in 58:60){
+  for (j in 1:541){
+    if((length(grep(CongressList[j],d$doc.text[i]))) > 0) d$Name[i] = CongressList[j]
+  }
+}
 
 
 # Make this to combine with states
@@ -133,6 +161,7 @@ PolsByState$PolsWhoSupport[is.na(PolsByState$PolsWhoSupport)] <- 0
 # I now normalize by total possible pols (that is, "counted" from above)
 # +1 for the governor
 PolsByState$PercOfPols <- PolsByState$PolsWhoSupport / (PolsByState$CongressMembers + 1) 
+
 
 #### Map it ####
 # http://uchicagoconsulting.wordpress.com/tag/r-ggplot2-maps-visualization/
