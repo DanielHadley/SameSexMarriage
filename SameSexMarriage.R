@@ -19,7 +19,14 @@ require("ggmap")
 
 # load data, which was scraped from wikipedia on Nov 16th, 2014
 polls <- read.csv("./data/PollingData.csv")
-politicians <- read.csv("./data//PoliticianData.csv")
+supporters <- read.csv("./data//PoliticianData.csv")
+opponents <- read.csv("./data//PoliticianOpponentData.csv")
+# congress data: https://www.govtrack.us/data/congress-legislators/
+congress <- read.csv("./data/legislators-current.csv")
+abbreviations <- read.csv("./data//us_states.csv", header=F)
+congress <- merge(congress, abbreviations, by.x="state", by.y="V3", all.x=T)
+remove(abbreviations)
+
 
 # States data from https://www.census.gov/popest/data/state/asrh/2013/files/SCPRC-EST2013-18+POP-RES.csv
 # Population for 18+
@@ -58,13 +65,29 @@ states <- read.csv("./data/States.csv")
 # 
 # write.csv(table, "./data/PollingData.csv")
 
+# List of opponents:
+
+# # Read and parse HTML file
+# doc.html = htmlTreeParse('http://en.wikipedia.org/wiki/List_of_opponents_of_same-sex_marriage_in_the_United_States#Elected_officials',
+#                          useInternal = TRUE)
+# 
+# # Extract all the paragraphs (HTML tag is p, starting at
+# # the root of the document). Unlist flattens the list to
+# # create a character vector.
+# doc.text = unlist(xpathApply(doc.html, '//li', xmlValue))
+# 
+# # make a df
+# d <- as.data.frame(doc.text)
+# 
+# write.csv(d, "./data/PoliticianOpponentData.csv")
+
 
 #### Clean data ####
 states <- states[2:53,]
 statesList <- as.character(states$NAME)
 
 # cut out wiki surrounding info
-d <- politicians[151:951,]
+d <- supporters[151:951,]
 
 # make a new column to fill in below
 d$State <- NA
