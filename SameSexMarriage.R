@@ -1,3 +1,4 @@
+# Politicians For and Against Gay Marriage
 # Created by Daniel Hadley to analyze the support for gay marriage
 # Nov, 2014
 setwd("/Users/dphnrome/Documents/Git/SameSexMarriage/")
@@ -27,9 +28,10 @@ abbreviations <- read.csv("./data//us_states.csv", header=F)
 congress <- merge(congress, abbreviations, by.x="state", by.y="V3", all.x=T)
 remove(abbreviations)
 
-
 # States data from https://www.census.gov/popest/data/state/asrh/2013/files/SCPRC-EST2013-18+POP-RES.csv
 # Population for 18+
+# stopped using this because population is not a useful denominator
+# Now just used to make the list for wikipedia mining
 states <- read.csv("./data/States.csv")
 
 
@@ -83,8 +85,16 @@ states <- read.csv("./data/States.csv")
 
 
 #### Clean data ####
-states <- states[2:53,]
+# This to find out how many possible politicians come from each state
+congress$Tab <- 1
+congByState <- dcast(congress, congress$V2 ~ congress$Tab)
+congByState <- rename(congByState, c("congress$V2" = "State", "1"="CongressMembers"))
+congByState <- congByState[1:50,]
+
+# And make a list to pull the state from wikipedia
+states <- states[2:53,] # the old states data
 statesList <- as.character(states$NAME)
+
 
 # cut out wiki surrounding info
 d <- supporters[151:951,]
@@ -103,26 +113,26 @@ d$Tab <- 1
 
 
 # To differentiate between present and past politicans
-# I leave out mayors b/c the list is not current - many past mayors on the current list
 d$Current <- NA
-d$Current[c(8:64, 98:285, 401:418, 476:488, 520:544)] <- "Current" 
+d$Current[c(8:64, 98:285, 401:418, 476:488, 520:544, 574:713)] <- "Current" 
+# I leave out mayors, lieutenant governors & Attourneys General b/c the list is not as complete
+d$Count <- NA
+d$Count[c(8:64, 98:285, 401:418)] <- "Count" #eg, congress and governors
 
-d <- d[which(d$Current == "Current"),]
+d <- d[which(d$Count == "Count"),]
 
 
 # Make this to combine with states
 PolsByState <- dcast(d, State ~ Tab) # , sum) not working for some reason 
 
-PolsByState <- merge(states, PolsByState, by.x="NAME", by.y="State", all=T)
+PolsByState <- merge(congByState, PolsByState, by="State", all=T)
 
-PolsByState <- PolsByState[1:52,]
 PolsByState <- rename(PolsByState, c("1"="PolsWhoSupport"))
 PolsByState$PolsWhoSupport[is.na(PolsByState$PolsWhoSupport)] <- 0
 
-# I now normalize by the population over 18 yrs old
-PolsByState$PolsPerCapita <- PolsByState$PolsWhoSupport / PolsByState$POPEST18PLUS2013
-PolsByState$PolsPerMillion <- PolsByState$PolsPerCapita * 1000000
-
+# I now normalize by total possible pols (that is, "counted" from above)
+# +1 for the governor
+PolsByState$PercOfPols <- PolsByState$PolsWhoSupport / (PolsByState$CongressMembers + 1) 
 
 #### Map it ####
 # http://uchicagoconsulting.wordpress.com/tag/r-ggplot2-maps-visualization/
@@ -131,7 +141,7 @@ all_states <- map_data("state")
 
 # Prep for the merge
 all_states$State <- gsub("\\b([a-z])([a-z]+)", "\\U\\1\\L\\2" ,all_states$region, perl=TRUE)
-all_states <- merge(all_states, PolsByState, by.x="State", by.y="NAME", all.x=T)
+all_states <- merge(all_states, PolsByState, by="State", all.x=T)
 
 
 # Map
@@ -140,7 +150,7 @@ ggmap(map)
 
 #plot all states with ggplot
 ggmap(map) +
-  geom_polygon(data=all_states, aes(x=long, y=lat, group=group, fill=all_states$PolsPerMillion), colour=NA, alpha=0.7) +
+  geom_polygon(data=all_states, aes(x=long, y=lat, group=group, fill=all_states$PercOfPols), colour=NA, alpha=0.7) +
   scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu"))) +
   labs(fill="") +
   theme_nothing(legend=TRUE) + ggtitle("Politicians Per Million")
@@ -149,7 +159,7 @@ ggsave(paste("./plots/Map.png"), dpi=300, width=6, height=5)
 
 
 p <- ggplot()
-p <- p + geom_polygon( data=all_states, aes(x=long, y=lat, group = group, fill=all_states$PolsPerMillion), colour=NA, alpha=1) +
+p <- p + geom_polygon( data=all_states, aes(x=long, y=lat, group = group, fill=all_states$PercOfPols), colour=NA, alpha=1) +
   scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu"))) +
   labs(fill="") +
   theme_nothing(legend=TRUE) + ggtitle("Politicians Per Million")
