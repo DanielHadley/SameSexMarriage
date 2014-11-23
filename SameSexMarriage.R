@@ -98,7 +98,7 @@ congByState <- congByState[1:50,]
 states <- states[2:53,] # the old states data
 statesList <- as.character(states$NAME)
 
-
+### First the proponents
 # cut out wiki surrounding info
 d <- supporters[151:951,]
 
@@ -152,15 +152,76 @@ for(i in 58:60){
 
 # Make this to combine with states
 PolsByState <- dcast(d, State ~ Tab) # , sum) not working for some reason 
-
 PolsByState <- merge(congByState, PolsByState, by="State", all=T)
-
 PolsByState <- rename(PolsByState, c("1"="PolsWhoSupport"))
 PolsByState$PolsWhoSupport[is.na(PolsByState$PolsWhoSupport)] <- 0
 
+
+### Now the opponents
+# cut out wiki surrounding info
+d <- opponents[70:753,]
+
+# make a new column to fill in below
+d$State <- NA
+
+# This will fill in the column from above with the home state of each listed politician
+for(i in 1:801){
+  for (j in 1:52){
+    if((length(grep(statesList[j],d$doc.text[i]))) > 0) d$State[i] = statesList[j]
+  }
+}
+
+d$Tab <- 1
+
+
+# To differentiate between present and past politicans
+d$Current <- NA
+d$Current[c(3:44, 117:345, 487:517, 476:488, 609:623)] <- "Current" 
+
+# To differentiate between ones we count and others
+# I leave out mayors, lieutenant governors & Attourneys General b/c the list is not as complete
+d$Count <- NA
+d$Count[c(3:44, 117:345, 487:517)] <- "Count" #eg, congress and governors
+d <- d[which(d$Count == "Count"),]
+
+# ID congress
+d$Congress <- NA
+d$Congress[c(1:271)] <- "Congress" 
+
+### Make a name column
+d$Name <- NA
+d$Name <- str_split_fixed(d$doc.text, "[[]", n = 2)[, 1]
+d$Name <- str_split_fixed(d$Name, "[(]", n = 2)[, 1]
+
+
+# To take out all of the filler without gsub (e.g. speaker of the ...)
+# Use congresslist made earlier
+
+for(i in 1:2){
+  for (j in 1:541){
+    if((length(grep(CongressList[j],d$doc.text[i]))) > 0) d$Name[i] = CongressList[j]
+  }
+}
+
+for(i in 44:45){
+  for (j in 1:541){
+    if((length(grep(CongressList[j],d$doc.text[i]))) > 0) d$Name[i] = CongressList[j]
+  }
+}
+
+
+# Make this to combine with states
+OpposeByState <- dcast(d, State ~ Tab) # , sum) not working for some reason 
+PolsByState <- merge(PolsByState, OpposeByState, by="State", all.x=T)
+PolsByState <- rename(PolsByState, c("1"="PolsWhoOppose"))
+PolsByState$PolsWhoOppose[is.na(PolsByState$PolsWhoOppose)] <- 0
+
+
 # I now normalize by total possible pols (that is, "counted" from above)
 # +1 for the governor
-PolsByState$PercOfPols <- PolsByState$PolsWhoSupport / (PolsByState$CongressMembers + 1) 
+PolsByState$TotalPols <- PolsByState$CongressMembers + 1
+PolsByState$PercOfPols <- PolsByState$PolsWhoSupport / PolsByState$TotalPols
+PolsByState$PercOfPolsOpp <- PolsByState$PolsWhoOppose / PolsByState$TotalPols
 
 
 #### Map it ####
@@ -195,5 +256,15 @@ p <- p + geom_polygon( data=all_states, aes(x=long, y=lat, group = group, fill=a
 p
 
 ggsave(paste("./plots/Map2.png"), dpi=300, width=8, height=5)
+
+
+p <- ggplot()
+p <- p + geom_polygon( data=all_states, aes(x=long, y=lat, group = group, fill=all_states$PercOfPolsOpp), colour=NA, alpha=1) +
+  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu"))) +
+  labs(fill="") +
+  theme_nothing(legend=TRUE) + ggtitle("Politicians Per Million")
+p
+
+ggsave(paste("./plots/Map3.png"), dpi=300, width=8, height=5)
 
 
