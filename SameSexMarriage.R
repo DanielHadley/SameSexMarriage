@@ -25,11 +25,15 @@ require("ggmap")
 polls <- read.csv("./data/PollingData.csv")
 supporters <- read.csv("./data//PoliticianData.csv")
 opponents <- read.csv("./data//PoliticianOpponentData.csv")
+
 # congress data: https://www.govtrack.us/data/congress-legislators/
 congress <- read.csv("./data/legislators-current.csv")
 abbreviations <- read.csv("./data//us_states.csv", header=F)
 congress <- merge(congress, abbreviations, by.x="state", by.y="V3", all.x=T)
 remove(abbreviations)
+
+# More congress data: https://sunlightlabs.github.io/congress/#legislator-spreadsheet
+congressSunlight <- read.csv("./data//legislators-sunlight.csv")
 
 # States data from https://www.census.gov/popest/data/state/asrh/2013/files/SCPRC-EST2013-18+POP-RES.csv
 # Population for 18+
@@ -105,7 +109,11 @@ d <- supporters[151:951,]
 # make a new column to fill in below
 d$State <- NA
 
-# This will fill in the column from above with the home state of each listed politician
+# This will fill in t
+
+
+
+he column from above with the home state of each listed politician
 for(i in 1:801){
   for (j in 1:52){
     if((length(grep(statesList[j],d$doc.text[i]))) > 0) d$State[i] = statesList[j]
