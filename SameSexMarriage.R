@@ -1,8 +1,8 @@
 # Politicians For and Against Gay Marriage
 # Created by Daniel Hadley to analyze the support for gay marriage
 # Nov, 2014
-setwd("/Users/dphnrome/Documents/Git/SameSexMarriage/")
-# setwd("C:/Users/dhadley/Documents/GitHub/SameSexMarriage")
+# setwd("/Users/dphnrome/Documents/Git/SameSexMarriage/")
+setwd("C:/Users/dhadley/Documents/GitHub/SameSexMarriage")
 
 
 #### Load packages and data ####
@@ -220,7 +220,7 @@ PolsByState$PolsWhoOppose[is.na(PolsByState$PolsWhoOppose)] <- 0
 # I now normalize by total possible pols (that is, "counted" from above)
 # +1 for the governor
 PolsByState$TotalPols <- PolsByState$CongressMembers + 1
-PolsByState$PercOfPols <- PolsByState$PolsWhoSupport / PolsByState$TotalPols
+PolsByState$PercOfPolsSupp <- PolsByState$PolsWhoSupport / PolsByState$TotalPols
 PolsByState$PercOfPolsOpp <- PolsByState$PolsWhoOppose / PolsByState$TotalPols
 
 
@@ -229,18 +229,26 @@ PolsByState$PercOfPolsOpp <- PolsByState$PolsWhoOppose / PolsByState$TotalPols
 #load us map data
 all_states <- map_data("state")
 
-# Prep for the merge
-all_states$State <- gsub("\\b([a-z])([a-z]+)", "\\U\\1\\L\\2" ,all_states$region, perl=TRUE)
-all_states <- merge(all_states, PolsByState, by="State", all.x=T)
+
+# Prep for the map
+# I create a new df that is similar to all_states because merging ruins the shapefiles from all_states 
+State <- gsub("\\b([a-z])([a-z]+)", "\\U\\1\\L\\2" ,all_states$region, perl=TRUE)
+State <- as.data.frame(State)
+all_statesTwo <- merge(State, PolsByState, by="State", all.x=T)
+all_states$PercOfPolsSupp <- all_statesTwo$PercOfPolsSupp 
+all_states$PercOfPolsOpp <- all_statesTwo$PercOfPolsOpp
 
 
 # Map
-map <- get_map(location = "USA", zoom=3, maptype="roadmap", color = "bw")
+map <- get_map(location = "USA", zoom=4, maptype="roadmap", color = "bw")
 ggmap(map)
 
 #plot all states with ggplot
-ggmap(map) +
-  geom_polygon(data=all_states, aes(x=long, y=lat, group=group, fill=all_states$PercOfPols), colour=NA, alpha=0.7) +
+# Fixed the bounding problem: http://www.exegetic.biz/blog/2013/12/contour-and-density-layers-with-ggmap/
+
+# Opponents
+ggmap(map,extent = "normal", maprange=FALSE) +
+  geom_polygon(data=all_states, aes(x=long, y=lat, group=group, fill=all_states$PercOfPolsOpp), colour=NA, alpha=0.7) +
   scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu"))) +
   labs(fill="") +
   theme_nothing(legend=TRUE) + ggtitle("Politicians Per Million")
@@ -248,23 +256,8 @@ ggmap(map) +
 ggsave(paste("./plots/Map.png"), dpi=300, width=6, height=5)
 
 
-p <- ggplot()
-p <- p + geom_polygon( data=all_states, aes(x=long, y=lat, group = group, fill=all_states$PercOfPols), colour=NA, alpha=1) +
-  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu"))) +
-  labs(fill="") +
-  theme_nothing(legend=TRUE) + ggtitle("Politicians Per Million")
-p
-
-ggsave(paste("./plots/Map2.png"), dpi=300, width=8, height=5)
 
 
-p <- ggplot()
-p <- p + geom_polygon( data=all_states, aes(x=long, y=lat, group = group, fill=all_states$PercOfPolsOpp), colour=NA, alpha=1) +
-  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu"))) +
-  labs(fill="") +
-  theme_nothing(legend=TRUE) + ggtitle("Politicians Per Million")
-p
 
-ggsave(paste("./plots/Map3.png"), dpi=300, width=8, height=5)
 
 
