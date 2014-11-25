@@ -1,8 +1,8 @@
 # Politicians For and Against Gay Marriage
 # Created by Daniel Hadley to analyze the support for gay marriage
 # Nov, 2014
-# setwd("/Users/dphnrome/Documents/Git/SameSexMarriage/")
-setwd("C:/Users/dhadley/Documents/GitHub/SameSexMarriage")
+setwd("/Users/dphnrome/Documents/Git/SameSexMarriage/")
+# setwd("C:/Users/dhadley/Documents/GitHub/SameSexMarriage")
 
 
 #### Load packages and data ####
@@ -34,6 +34,12 @@ remove(abbreviations)
 
 # More congress data: https://sunlightlabs.github.io/congress/#legislator-spreadsheet
 congressSunlight <- read.csv("./data//legislators-sunlight.csv")
+
+# House data scrapped from: 
+# wikipedia.org/wiki/Current_members_of_the_United_States_House_of_Representatives
+house <- read.csv("./data//HouseOfReps.csv")
+house$Name <- as.character(house$Name)
+house$Name <- substring(house$Name, ((nchar(house$Name)/2)+2))
 
 # States data from https://www.census.gov/popest/data/state/asrh/2013/files/SCPRC-EST2013-18+POP-RES.csv
 # Population for 18+
@@ -90,6 +96,14 @@ states <- read.csv("./data/States.csv")
 # 
 # write.csv(d, "./data/PoliticianOpponentData.csv")
 
+# # # Current House membership:
+# # 
+# # Read and parse HTML file
+# theurl <- 'http://en.wikipedia.org/wiki/Current_members_of_the_United_States_House_of_Representatives#Voting_members_by_state'
+# table <-  readHTMLTable(theurl, header=T, which=6,stringsAsFactors=F)
+# 
+# write.csv(table, "./data/HouseOfReps.csv")
+
 
 #### Clean data ####
 # This to find out how many possible politicians come from each state
@@ -109,11 +123,7 @@ d <- supporters[151:951,]
 # make a new column to fill in below
 d$State <- NA
 
-# This will fill in t
-
-
-
-he column from above with the home state of each listed politician
+# This will fill in the column from above with the home state of each listed politician
 for(i in 1:801){
   for (j in 1:52){
     if((length(grep(statesList[j],d$doc.text[i]))) > 0) d$State[i] = statesList[j]
