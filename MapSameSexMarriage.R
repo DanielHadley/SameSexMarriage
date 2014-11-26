@@ -13,6 +13,9 @@ setwd("C:/Users/dhadley/Documents/GitHub/SameSexMarriage")
 
 # load data, which was scraped from wikipedia on Nov 16th, 2014
 PolsByState <- read.csv("./data/PolsByState.csv")
+PollsByState <- read.csv("./data/PollsByState.csv")
+
+
 
 library(choroplethr)
 library(choroplethrMaps)
@@ -29,6 +32,38 @@ state_choropleth(PolsByState,
                  buckets = 1)
 
 ggsave(paste("./plots/Map1.png"), dpi=300, width=7, height=4)
+
+
+# Politician Support
+PolsByState$region <- tolower(PolsByState$State)
+PolsByState$value <- PolsByState$PercOfPolsSupp * 100
+
+state_choropleth(PolsByState,
+                 title   = "Politicians Who Support Gay Marriage",
+                 legend  = "% Support",
+                 buckets = 1)
+
+ggsave(paste("./plots/Map2.png"), dpi=300, width=7, height=4)
+
+
+# Public Support  
+PollsByState$region <- tolower(PollsByState$state)
+PolsByState$value <- PollsByState$support 
+
+state_choropleth(PolsByState,
+                 title   = "Public Support for Gay Marriage",
+                 legend  = "% Support",
+                 buckets = 1)
+
+ggsave(paste("./plots/Map3.png"), dpi=300, width=7, height=4)
+
+
+
+
+
+
+
+
 
 
 # Opposed

@@ -12,13 +12,6 @@ library(maps)
 library(reshape2)
 library(plyr)
 library(stringr)
-# Maping tools
-require("rgdal") # requires sp, will use proj.4 if installed
-require("maptools")
-require("ggplot2")
-require("plyr")
-require("RColorBrewer")
-require("ggmap")
 
 
 # load data, which was scraped from wikipedia on Nov 16th, 2014
@@ -105,7 +98,7 @@ states <- read.csv("./data/States.csv")
 # write.csv(table, "./data/HouseOfReps.csv")
 
 
-#### Clean data ####
+#### Clean data to make PolsByState ####
 # This to find out how many possible politicians come from each state
 congress$Tab <- 1
 congByState <- dcast(congress, congress$V2 ~ congress$Tab)
@@ -244,76 +237,13 @@ PolsByState$PercOfPolsOpp <- PolsByState$PolsWhoOppose / PolsByState$TotalPols
 write.csv(PolsByState, "./data/PolsByState.csv")
 
 
-#### Map it ####
+#### Polls data ####
+polls$state <- str_split_fixed(polls$State, "[[]", n = 2)[, 1]
 
-##  First the lower 48 
-# http://uchicagoconsulting.wordpress.com/tag/r-ggplot2-maps-visualization/
-#load us map data
-all_states <- map_data("state")
+data.m <- melt(polls, id=c(11), measure=c(4:5, 7)) # id = non-numeric; measure = numeric
+PollsByState <- dcast(data.m, state ~ variable, mean)
 
+PollsByState <- PollsByState[ which(PollsByState$state!='United States'), ]
 
-# Prep for the map
-# I create a new df that is similar to all_states because merging ruins the shapefiles from all_states 
-State <- gsub("\\b([a-z])([a-z]+)", "\\U\\1\\L\\2" ,all_states$region, perl=TRUE)
-State <- as.data.frame(State)
-all_statesTwo <- merge(State, PolsByState, by="State", all.x=T)
-all_states$PercOfPolsSupp <- all_statesTwo$PercOfPolsSupp 
-all_states$PercOfPolsOpp <- all_statesTwo$PercOfPolsOpp
-
-
-# Map
-map <- get_map(location = "USA", zoom=4, maptype="roadmap", color = "bw")
-ggmap(map)
-
-#plot all states with ggplot
-# Fixed the bounding problem: http://www.exegetic.biz/blog/2013/12/contour-and-density-layers-with-ggmap/
-
-# Opponents
-ggmap(map,extent = "normal", maprange=FALSE) +
-  geom_polygon(data=all_states, aes(x=long, y=lat, group=group, fill=all_states$PercOfPolsOpp), colour=NA, alpha=0.7) +
-  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu"))) +
-  labs(fill="") +
-  theme_nothing(legend=TRUE) + ggtitle("Politicians Per Million")
-
-ggsave(paste("./plots/Map.png"), dpi=300, width=6, height=5)
-
-
-p <- ggmap(map,extent = "normal", maprange=FALSE) +
-  geom_polygon(data=all_states, aes(x=long, y=lat, group=group, fill=all_states$PercOfPolsOpp), colour=NA, alpha=0.7) +
-  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu"))) +
-  labs(fill="") +
-  theme_nothing(legend=TRUE) + ggtitle("Politicians Per Million")
-
-
-# Now the full 50 for the boxes with Hawaii and Alaska
-
-us50_shp <- readShapePoly("./shapefiles/states/states.shp")
-us50_df <- as.data.frame(us50_shp)
-
-us50_points <- sp2tmap(us50_shp)
-names(us50_points) <- c("id", "x", "y")
-us50 <- merge(x = us50_df, y = us50_points, by.x = "DRAWSEQ", by.y = "id")
-
-# prepare an identical dataframe to loan columns to the shapefile df
-us50Two <- merge(us50, PolsByState, by.x="STATE_NAME", by.y="State", all.x=T)
-us50Two <- us50Two[order(us50Two$DRAWSEQ) , ]
-us50$PercOfPolsSupp <- us50Two$PercOfPolsSupp 
-us50$PercOfPolsOpp <- us50Two$PercOfPolsOpp
-
-
-# Map
-Hawaiimap <- get_map(location = "Hawaii, USA", zoom=8, maptype="roadmap", color = "bw")
-ggmap(Hawaiimap)
-
-#plot all states with ggplot
-# Fixed the bounding problem: http://www.exegetic.biz/blog/2013/12/contour-and-density-layers-with-ggmap/
-
-# Opponents
-ggmap(Hawaiimap,extent = "normal", maprange=T) +
-  geom_polygon(data=us50, aes(x=x, y=y, group=DRAWSEQ, fill=us50$PercOfPolsOpp), colour=NA, alpha=0.7) +
-  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu"))) +
-  labs(fill="") +
-  theme_nothing(legend=TRUE) + ggtitle("Politicians Per Million")
-
-
+write.csv(PollsByState, "./data/PollsByState.csv")
 
