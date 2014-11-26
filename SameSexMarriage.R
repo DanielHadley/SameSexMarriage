@@ -1,8 +1,8 @@
 # Politicians For and Against Gay Marriage
 # Created by Daniel Hadley to analyze the support for gay marriage
 # Nov, 2014
-setwd("/Users/dphnrome/Documents/Git/SameSexMarriage/")
-# setwd("C:/Users/dhadley/Documents/GitHub/SameSexMarriage")
+# setwd("/Users/dphnrome/Documents/Git/SameSexMarriage/")
+setwd("C:/Users/dhadley/Documents/GitHub/SameSexMarriage")
 
 
 #### Load packages and data ####
@@ -241,8 +241,12 @@ PolsByState$TotalPols <- PolsByState$CongressMembers + 1
 PolsByState$PercOfPolsSupp <- PolsByState$PolsWhoSupport / PolsByState$TotalPols
 PolsByState$PercOfPolsOpp <- PolsByState$PolsWhoOppose / PolsByState$TotalPols
 
+write.csv(PolsByState, "./data/PolsByState.csv")
+
 
 #### Map it ####
+
+##  First the lower 48 
 # http://uchicagoconsulting.wordpress.com/tag/r-ggplot2-maps-visualization/
 #load us map data
 all_states <- map_data("state")
@@ -274,8 +278,42 @@ ggmap(map,extent = "normal", maprange=FALSE) +
 ggsave(paste("./plots/Map.png"), dpi=300, width=6, height=5)
 
 
+p <- ggmap(map,extent = "normal", maprange=FALSE) +
+  geom_polygon(data=all_states, aes(x=long, y=lat, group=group, fill=all_states$PercOfPolsOpp), colour=NA, alpha=0.7) +
+  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu"))) +
+  labs(fill="") +
+  theme_nothing(legend=TRUE) + ggtitle("Politicians Per Million")
 
 
+# Now the full 50 for the boxes with Hawaii and Alaska
+
+us50_shp <- readShapePoly("./shapefiles/states/states.shp")
+us50_df <- as.data.frame(us50_shp)
+
+us50_points <- sp2tmap(us50_shp)
+names(us50_points) <- c("id", "x", "y")
+us50 <- merge(x = us50_df, y = us50_points, by.x = "DRAWSEQ", by.y = "id")
+
+# prepare an identical dataframe to loan columns to the shapefile df
+us50Two <- merge(us50, PolsByState, by.x="STATE_NAME", by.y="State", all.x=T)
+us50Two <- us50Two[order(us50Two$DRAWSEQ) , ]
+us50$PercOfPolsSupp <- us50Two$PercOfPolsSupp 
+us50$PercOfPolsOpp <- us50Two$PercOfPolsOpp
+
+
+# Map
+Hawaiimap <- get_map(location = "Hawaii, USA", zoom=8, maptype="roadmap", color = "bw")
+ggmap(Hawaiimap)
+
+#plot all states with ggplot
+# Fixed the bounding problem: http://www.exegetic.biz/blog/2013/12/contour-and-density-layers-with-ggmap/
+
+# Opponents
+ggmap(Hawaiimap,extent = "normal", maprange=T) +
+  geom_polygon(data=us50, aes(x=x, y=y, group=DRAWSEQ, fill=us50$PercOfPolsOpp), colour=NA, alpha=0.7) +
+  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu"))) +
+  labs(fill="") +
+  theme_nothing(legend=TRUE) + ggtitle("Politicians Per Million")
 
 
 
