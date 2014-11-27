@@ -12,6 +12,8 @@ require("ggplot2")
 require("plyr")
 require("RColorBrewer")
 require("ggmap")
+library(scales) # for changing from scientific notation
+
 
 
 # load data, which was scraped from wikipedia on Nov 16th, 2014
@@ -71,38 +73,55 @@ ggmap(Alaskamap)
 # Opponents 48
 ggmap(map,extent = "normal", maprange=FALSE) +
   geom_polygon(data=all_states, aes(x=long, y=lat, group=group, fill=all_states$PercOfPolsOpp), colour=NA, alpha=0.7) +
-  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu"))) +
+  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu")),labels=percent) +
   labs(fill="") +
   theme_nothing(legend=TRUE) + ggtitle("% Of Politicians Opposed to Gay Marriage, 2014")
 
 ggsave(paste("./plots/GMapOpposed.png"), dpi=300, width=6, height=5)
 
-
-# Now the full 50 for the boxes with Hawaii and Alaska
-
-us50_shp <- readShapePoly("./shapefiles/FiftyStates/cb_2013_us_state_20m.shp")
-us50_df <- as.data.frame(us50_shp)
-
-us50_points <- sp2tmap(us50_shp)
-names(us50_points) <- c("id", "x", "y")
-us50_df$DRAWSEQ <- 1:52
-us50 <- merge(x = us50_df, y = us50_points, by.x = "DRAWSEQ", by.y = "id")
-
-# prepare an identical dataframe to loan columns to the shapefile df
-us50Two <- merge(us50, PolsByState, by.x="NAME", by.y="State", all.x=T)
-us50Two <- us50Two[order(us50Two$DRAWSEQ) , ]
-us50$PercOfPolsSupp <- us50Two$PercOfPolsSupp 
-us50$PercOfPolsOpp <- us50Two$PercOfPolsOpp
-
-
-# Map
-Hawaiimap <- get_map(location = "Hawaii, USA", zoom=8, maptype="roadmap", color = "bw")
-ggmap(Hawaiimap)
-
-
-# Opponents
+# Opponents HI
 ggmap(Hawaiimap,extent = "normal", maprange=T) +
   geom_polygon(data=us50, aes(x=x, y=y, group=DRAWSEQ, fill=us50$PercOfPolsOpp), colour=NA, alpha=0.7) +
-  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu"))) +
+  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu")),labels=percent) +
   labs(fill="") +
-  theme_nothing(legend=TRUE) + ggtitle("Politicians Per Million")
+  theme_nothing(legend=TRUE) + ggtitle("% Of Politicians Opposed to Gay Marriage, 2014")
+
+ggsave(paste("./plots/GMapOpposedHI.png"), dpi=300, width=6, height=5)
+
+# Opponents AK
+ggmap(Alaskamap,extent = "normal", maprange=T) +
+  geom_polygon(data=us50, aes(x=x, y=y, group=DRAWSEQ, fill=us50$PercOfPolsOpp), colour=NA, alpha=0.7) +
+  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu")),labels=percent) +
+  labs(fill="") +
+  theme_nothing(legend=TRUE) + ggtitle("% Of Politicians Opposed to Gay Marriage, 2014")
+
+ggsave(paste("./plots/GMapOpposedAK.png"), dpi=300, width=6, height=5)
+
+
+
+# Support 48
+ggmap(map,extent = "normal", maprange=FALSE) +
+  geom_polygon(data=all_states, aes(x=long, y=lat, group=group, fill=all_states$PercOfPolsSupp), colour=NA, alpha=0.7) +
+  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu")),labels=percent) +
+  labs(fill="") +
+  theme_nothing(legend=TRUE) + ggtitle("% Of Politicians Who Support Gay Marriage, 2014")
+
+ggsave(paste("./plots/GMapSupport.png"), dpi=300, width=6, height=5)
+
+# Support HI
+ggmap(Hawaiimap,extent = "normal", maprange=T) +
+  geom_polygon(data=us50, aes(x=x, y=y, group=DRAWSEQ, fill=us50$PercOfPolsSupp), colour=NA, alpha=0.7) +
+  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu")),labels=percent) +
+  labs(fill="") +
+  theme_nothing(legend=TRUE) + ggtitle("% Of Politicians Who Support Gay Marriage, 2014")
+
+ggsave(paste("./plots/GMapSupportHI.png"), dpi=300, width=6, height=5)
+
+# Support AK
+ggmap(Alaskamap,extent = "normal", maprange=T) +
+  geom_polygon(data=us50, aes(x=x, y=y, group=DRAWSEQ, fill=us50$PercOfPolsSupp), colour=NA, alpha=0.7) +
+  scale_fill_gradientn(colours=(brewer.pal(9,"YlGnBu")),labels=percent) +
+  labs(fill="") +
+  theme_nothing(legend=TRUE) + ggtitle("% Of Politicians Who Support Gay Marriage, 2014")
+
+ggsave(paste("./plots/GMapSupportAK.png"), dpi=300, width=6, height=5)
