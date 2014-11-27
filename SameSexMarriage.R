@@ -1,8 +1,8 @@
 # Politicians For and Against Gay Marriage
 # Created by Daniel Hadley to analyze the support for gay marriage
 # Nov, 2014
-# setwd("/Users/dphnrome/Documents/Git/SameSexMarriage/")
-setwd("C:/Users/dhadley/Documents/GitHub/SameSexMarriage")
+setwd("/Users/dphnrome/Documents/Git/SameSexMarriage/")
+# setwd("C:/Users/dhadley/Documents/GitHub/SameSexMarriage")
 
 
 #### Load packages and data ####
@@ -123,7 +123,7 @@ for(i in 1:801){
   }
 }
 
-d$Tab <- 1
+d$PolsWhoSupport <- 1
 
 
 # To differentiate between present and past politicans
@@ -160,12 +160,21 @@ for(i in 58:60){
   }
 }
 
+# tab for each type of pol
+d$SenatorsSupport <- 0
+d$SenatorsSupport[c(1:57)] <- 1
+
+d$RepsSupport <- 0
+d$RepsSupport[c(58:245)] <- 1
+
+d$GovsSupport <- 0
+d$GovsSupport[c(246:263)] <- 1
 
 # Make this to combine with states
-PolsByState <- dcast(d, State ~ Tab) # , sum) not working for some reason 
+meltd <- melt(d, id=c(3), measure=c(4, 9:11)) # id = non-numeric; measure = numeric
+PolsByState <- dcast(meltd, State ~ variable, sum) # , sum) not working for some reason 
 PolsByState <- merge(congByState, PolsByState, by="State", all=T)
-PolsByState <- rename(PolsByState, c("1"="PolsWhoSupport"))
-PolsByState$PolsWhoSupport[is.na(PolsByState$PolsWhoSupport)] <- 0
+PolsByState[is.na(PolsByState)] <-  0
 
 
 ### Now the opponents
@@ -182,7 +191,7 @@ for(i in 1:801){
   }
 }
 
-d$Tab <- 1
+d$PolsWhoOppose <- 1
 
 
 # To differentiate between present and past politicans
@@ -220,12 +229,21 @@ for(i in 44:45){
   }
 }
 
+# tab for each type of pol
+d$SenatorsOppose <- 0
+d$SenatorsOppose[c(1:42)] <- 1
+
+d$RepsOppose <- 0
+d$RepsOppose[c(43:271)] <- 1
+
+d$GovsOppose <- 0
+d$GovsOppose[c(272:302)] <- 1
 
 # Make this to combine with states
-OpposeByState <- dcast(d, State ~ Tab) # , sum) not working for some reason 
+meltd <- melt(d, id=c(3), measure=c(4, 9:11)) # id = non-numeric; measure = numeric
+OpposeByState <- dcast(meltd, State ~ variable, sum) 
 PolsByState <- merge(PolsByState, OpposeByState, by="State", all.x=T)
-PolsByState <- rename(PolsByState, c("1"="PolsWhoOppose"))
-PolsByState$PolsWhoOppose[is.na(PolsByState$PolsWhoOppose)] <- 0
+PolsByState[is.na(PolsByState)] <-  0
 
 
 # I now normalize by total possible pols (that is, "counted" from above)

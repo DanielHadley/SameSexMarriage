@@ -8,8 +8,8 @@ setwd("C:/Users/dhadley/Documents/GitHub/SameSexMarriage")
 #### Load packages and data ####
 
 # Warning: installing my modified version seems to override the official package
-# library('devtools')
-# install_github(repo='choroplethrModified', username ="DanielHadley")
+library('devtools')
+install_github(repo='choroplethrModified', username ="DanielHadley")
 
 # load data, which was scraped from wikipedia on Nov 16th, 2014
 PolsByState <- read.csv("./data/PolsByState.csv")
