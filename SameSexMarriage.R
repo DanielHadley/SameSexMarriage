@@ -12,7 +12,7 @@ library(maps)
 library(reshape2)
 library(plyr)
 library(stringr)
-
+library(scales)
 
 # load data, which was scraped from wikipedia on Nov 16th, 2014
 polls <- read.csv("./data/PollingData.csv")
@@ -176,6 +176,10 @@ PolsByState <- dcast(meltd, State ~ variable, sum) # , sum) not working for some
 PolsByState <- merge(congByState, PolsByState, by="State", all=T)
 PolsByState[is.na(PolsByState)] <-  0
 
+# save a copy before moving on to opponents
+# replacing the o.g. wiki data
+supporters <- d
+
 
 ### Now the opponents
 # cut out wiki surrounding info
@@ -246,13 +250,20 @@ PolsByState <- merge(PolsByState, OpposeByState, by="State", all.x=T)
 PolsByState[is.na(PolsByState)] <-  0
 
 
+# save a copy before moving on to opponents
+# replacing the o.g. wiki data
+opponents <- d
+
+
 # I now normalize by total possible pols (that is, "counted" from above)
 # +1 for the governor
 PolsByState$TotalPols <- PolsByState$CongressMembers + 1
 PolsByState$PercOfPolsSupp <- PolsByState$PolsWhoSupport / PolsByState$TotalPols
 PolsByState$PercOfPolsOpp <- PolsByState$PolsWhoOppose / PolsByState$TotalPols
 
-write.csv(PolsByState, "./data/PolsByState.csv")
+# I comment this out so that I don't overwrite it on accident
+# Maps depend on this data
+# write.csv(PolsByState, "./data/PolsByState.csv")
 
 
 #### Polls data ####
@@ -263,5 +274,64 @@ PollsByState <- dcast(data.m, state ~ variable, mean)
 
 PollsByState <- PollsByState[ which(PollsByState$state!='United States'), ]
 
-write.csv(PollsByState, "./data/PollsByState.csv")
+# I comment this out so that I don't overwrite it on accident
+# Maps depend on this data
+# write.csv(PollsByState, "./data/PollsByState.csv")
 
+
+#### Prepares data for visualizations #####
+# remove data that we don't need
+remove(OpposeByState, congByState, d, data.m, meltd, polls, i, j, statesList, CongressList)
+
+d <- merge(PollsByState, PolsByState, by.x="state", by.y="State")
+d <- merge(d, states, by.x="state", by.y="NAME")
+
+# add my theme and favorite colors
+lime_green = "#2ecc71"
+soft_blue = "#3498db"
+pinkish_red = "#e74c3c"
+purple = "#9b59b6"
+teele = "#1abc9c"
+nice_blue = "#2980b9"
+
+my.theme <- 
+  theme(#plot.background = element_rect(fill="white"), # Remove background
+    panel.grid.major = element_blank(), # Remove gridlines
+    # panel.grid.minor = element_blank(), # Remove more gridlines
+    # panel.border = element_blank(), # Remove border
+    panel.background = element_blank(), # Remove more background
+    axis.ticks = element_blank(), # Remove axis ticks
+    axis.text=element_text(size=6), # Enlarge axis text font
+    axis.title=element_text(size=8), # Enlarge axis title font
+    plot.title=element_text(size=12) # Enlarge, left-align title
+    ,axis.text.x = element_text(angle=60, hjust = 1) # Uncomment if X-axis unreadable 
+  )
+
+
+summary(lm(d$PercOfPolsSupp ~ d$support))$r.squared 
+ggplot(d, aes(x=d$PercOfPolsSupp, 
+                y=(d$support) / 100)) +
+  geom_point(shape=1) + #scale_x_log10() +
+  geom_smooth(method=lm, color = "grey") +
+  # scale_color_manual(values = c(pinkish_red, nice_blue, purple)) +
+  my.theme + ggtitle("Political Support Correlated to Public Opinion") + 
+  xlab("Percent of State's Politicans Who Support - R-Sq=.79")+
+  ylab("Percent Who Say They Support in Recent Polls") +
+  scale_y_continuous(labels = percent) +
+  scale_x_continuous(labels = percent)
+
+ggsave("./plots/plot01.png", dpi=300, width=5, height=4)
+
+
+ggplot(d, aes(x=d$PercOfPolsOpp, 
+              y=(d$X..opposition) / 100)) +
+  geom_point(shape=1) + #scale_x_log10() +
+  geom_smooth(method=lm, color = "grey") +
+  # scale_color_manual(values = c(pinkish_red, nice_blue, purple)) +
+  my.theme + ggtitle("Political Opposition Correlated to Public Opinion") + 
+  xlab("Percent of State's Politicans Who Oppose - R-Sq=.79")+
+  ylab("Percent Who Say They Oppose in Recent Polls") +
+  scale_y_continuous(labels = percent) +
+  scale_x_continuous(labels = percent)
+
+ggsave("./plots/plot02.png", dpi=300, width=5, height=4)
