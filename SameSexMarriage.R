@@ -286,6 +286,9 @@ remove(OpposeByState, congByState, d, data.m, meltd, polls, i, j, statesList, Co
 d <- merge(PollsByState, PolsByState, by.x="state", by.y="State")
 d <- merge(d, states, by.x="state", by.y="NAME")
 
+d$Majority <- ifelse(d$support > 50, "Support",
+                     ifelse(d$X..opposition > 50, "Oppose", "No Majority"))
+
 # add my theme and favorite colors
 lime_green = "#2ecc71"
 soft_blue = "#3498db"
@@ -310,10 +313,10 @@ my.theme <-
 
 summary(lm(d$PercOfPolsSupp ~ d$support))$r.squared 
 ggplot(d, aes(x=d$PercOfPolsSupp, 
-                y=(d$support) / 100)) +
+                y=(d$support / 100), color=Majority)) +
   geom_point(shape=1) + #scale_x_log10() +
+  scale_color_manual(values = c(purple, pinkish_red, nice_blue)) +
   geom_smooth(method=lm, color = "grey") +
-  # scale_color_manual(values = c(pinkish_red, nice_blue, purple)) +
   my.theme + ggtitle("Political Support Correlated to Public Opinion") + 
   xlab("Percent of State's Politicans Who Support - R-Sq=.79")+
   ylab("Percent Who Say They Support in Recent Polls") +
@@ -324,10 +327,10 @@ ggsave("./plots/plot01.png", dpi=300, width=5, height=4)
 
 
 ggplot(d, aes(x=d$PercOfPolsOpp, 
-              y=(d$X..opposition) / 100)) +
+              y=(d$X..opposition / 100), color=Majority)) +
   geom_point(shape=1) + #scale_x_log10() +
+  scale_color_manual(values = c(purple, pinkish_red, nice_blue)) +
   geom_smooth(method=lm, color = "grey") +
-  # scale_color_manual(values = c(pinkish_red, nice_blue, purple)) +
   my.theme + ggtitle("Political Opposition Correlated to Public Opinion") + 
   xlab("Percent of State's Politicans Who Oppose - R-Sq=.79")+
   ylab("Percent Who Say They Oppose in Recent Polls") +
@@ -335,3 +338,58 @@ ggplot(d, aes(x=d$PercOfPolsOpp,
   scale_x_continuous(labels = percent)
 
 ggsave("./plots/plot02.png", dpi=300, width=5, height=4)
+
+
+d.top <- d[which(d$PercOfPolsOpp == 1),]
+ggplot(d.top, aes(x=reorder(d.top$state, -d.top$POPEST18PLUS2013), y=d.top$POPEST18PLUS2013)) + geom_bar(colour="white", fill=pinkish_red) + 
+  my.theme + ggtitle("All States Where 100% of Politicans Oppose") + xlab("State")+
+  ylab("18+ Population") + 
+  scale_y_continuous(labels = comma)
+
+ggsave("./plots/plot03.png", dpi=300, width=5, height=4)
+
+
+d.top <- d[which(d$PercOfPolsSupp == 1),]
+ggplot(d.top, aes(x=reorder(d.top$state, -d.top$POPEST18PLUS2013), y=d.top$POPEST18PLUS2013)) + 
+  geom_bar(colour="white", fill=soft_blue) + 
+  my.theme + ggtitle("All States Where 100% of Politicans Support") + xlab("State")+
+  ylab("18+ Population") + 
+  scale_y_continuous(labels = comma)
+
+ggsave("./plots/plot04.png", dpi=300, width=5, height=4)
+
+
+ggplot(d, aes(x=(d$support / 100))) + geom_histogram(colour="white", fill=teele, binwidth = .05) + 
+  my.theme + ggtitle("Public Support for Gay Marriage") + 
+  xlab("Percent of State Who Say They Support")+
+  ylab("Number of States") + 
+  scale_x_continuous(labels = percent)
+
+ggsave("./plots/plot05.png", dpi=300, width=5, height=4)
+
+
+ggplot(d, aes(x=d$PercOfPolsSupp)) + geom_histogram(colour="white", fill=teele, binwidth = .1) + 
+  my.theme + ggtitle("Political Support for Gay Marriage") + 
+  xlab("% of State Politicians Who Support")+
+  ylab("Number of States") + 
+  scale_x_continuous(labels = percent)
+
+ggsave("./plots/plot06.png", dpi=300, width=5, height=4)
+
+
+d.top <- d[which(d$GovsOppose == 1 & d$support > 50),]
+ggplot(d.top, aes(x=reorder(d.top$state, -d.top$POPEST18PLUS2013), y=d.top$POPEST18PLUS2013)) + geom_bar(colour="white", fill=pinkish_red) + 
+  my.theme + ggtitle("Governor Opposes But the Majority Support") + xlab("State")+
+  ylab("18+ Population") + 
+  scale_y_continuous(labels = comma)
+
+ggsave("./plots/plot07.png", dpi=300, width=5, height=4)
+
+
+d.top <- d[which(d$SenatorsOppose >= 1 & d$support > 50),]
+ggplot(d.top, aes(x=reorder(d.top$state, -d.top$POPEST18PLUS2013), y=d.top$POPEST18PLUS2013)) + geom_bar(colour="white", fill=pinkish_red) + 
+  my.theme + ggtitle("A Senator Opposes But the Majority Support") + xlab("State")+
+  ylab("18+ Population") + 
+  scale_y_continuous(labels = comma)
+
+ggsave("./plots/plot08.png", dpi=300, width=5, height=4)
