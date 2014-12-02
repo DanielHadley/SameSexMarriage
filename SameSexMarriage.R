@@ -42,6 +42,9 @@ PolsByState <- read.csv("./data/PolsByState.csv")
 SupportersFinal <- read.csv("./data//SupportersFinal.csv")
 OpponentsFinal <- read.csv("./data/OpponentsFinal.csv")
 
+religiosity <- read.csv("./data//ReligiosityInUSA.csv")
+
+
 
 #### Prepares data for visualizations #####
 
@@ -158,3 +161,39 @@ ggplot(d.top, aes(x=reorder(d.top$state, -d.top$POPEST18PLUS2013), y=d.top$POPES
   scale_y_continuous(labels = comma)
 
 ggsave("./plots/plot08.png", dpi=300, width=5, height=4)
+
+
+
+d <- merge(d, religiosity, by.x="state", by.y="State")
+d$WeeklyAttendance <- gsub(pattern="[%]",replacement="", d$Percent)
+d$WeeklyAttendance <- as.numeric(d$WeeklyAttendance)
+summary(lm(d$X..opposition ~ d$WeeklyAttendance))$r.squared 
+ggplot(d, aes(x=(d$X..opposition / 100), 
+              y=(d$WeeklyAttendance / 100), color=Majority)) +
+  geom_point(shape=1) + #scale_x_log10() +
+  scale_color_manual(values = c(purple, pinkish_red, dark_blue)) +
+  geom_smooth(method=lm, color = "grey") +
+  my.theme + ggtitle("Public Opinion Correlated to Religiosity") + 
+  xlab("Percent Who Say They Oppose Gay Marriage - R-Sq=.68")+
+  ylab("Percent Who Say They Attend Church Weekly") +
+  scale_y_continuous(labels = percent) +
+  scale_x_continuous(labels = percent)
+
+ggsave("./plots/plot09.png", dpi=300, width=5, height=4)
+
+
+
+
+t <- table(congress$V2, congress$gender)
+ratio <- as.data.frame.matrix(t)
+ratio$percentMale <- ratio$M / (ratio$M + ratio$F)
+d <- merge(d, ratio, by.x="state", by.y="row.names")
+d$PerOfCongOpp <- (d$SenatorsOppose + d$RepsOppose) / d$CongressMembers
+t <- aggregate(d$PerOfCongOpp ~ d$MaleCongress, d, mean ) # makes a two-way table
+
+ggplot(t, aes(x=t$"d$MaleCongress", y=t$"d$PerOfCongOpp")) + geom_bar(colour="white", fill=middle_blue) + 
+  my.theme + ggtitle("All Male Delegations More Likely To Oppose") + xlab("All Male Congressional Delegation")+
+  ylab("Percent of Congress Members Who Oppose") + 
+  scale_y_continuous(labels = percent)
+
+ggsave("./plots/plot10.png", dpi=300, width=5, height=4)

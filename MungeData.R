@@ -19,6 +19,8 @@ polls <- read.csv("./data/PollingData.csv")
 supporters <- read.csv("./data//PoliticianData.csv")
 opponents <- read.csv("./data//PoliticianOpponentData.csv")
 
+religiosity <- read.csv("./data//ReligiosityInUSA.csv")
+
 # congress data: https://www.govtrack.us/data/congress-legislators/
 congress <- read.csv("./data/legislators-current.csv")
 abbreviations <- read.csv("./data//us_states.csv", header=F)
@@ -96,6 +98,15 @@ states <- read.csv("./data/States.csv")
 # table <-  readHTMLTable(theurl, header=T, which=6,stringsAsFactors=F)
 # 
 # write.csv(table, "./data/HouseOfReps.csv")
+
+# # # Religiousity:
+# # 
+# Source: "Mississippians Go to Church the Most; Vermonters, Least". Gallup.com. Retrieved 2012-03-17.
+# # Read and parse HTML file
+# theurl <- 'http://en.wikipedia.org/wiki/Religion_in_the_United_States'
+# table <-  readHTMLTable(theurl, header=T, which=3,stringsAsFactors=F)
+# 
+# write.csv(table, "./data/ReligiosityInUSA.csv")
 
 
 #### Clean data to make PolsByState ####
