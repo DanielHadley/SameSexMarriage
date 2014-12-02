@@ -59,7 +59,7 @@ ggsave(paste("./plots/Map3.png"), dpi=300, width=7, height=4)
 
 # Public Opposition  
 PollsByState$region <- tolower(PollsByState$state)
-PolsByState$value <- PollsByState$X..opposition 
+PollsByState$value <- PollsByState$X..opposition 
 
 state_choropleth(PollsByState,
                  title   = "Public Opposition to Gay Marriage",
@@ -116,7 +116,7 @@ PolsByState$value <- PolsByState$SenatorsSupport
 
 choro = StateChoropleth$new(PolsByState)
 choro$title = "Senators Who Support Gay Marriage"
-choro$ggplot_scale = scale_fill_manual(name="Oppose", values=c("#c7e9b4", "#1d91c0", "#0c2c84"))
+choro$ggplot_scale = scale_fill_manual(name="Support", values=c("#c7e9b4", "#1d91c0", "#0c2c84"))
 choro$render()
 
 ggsave(paste("./plots/Map8.png"), dpi=300, width=7, height=4)

@@ -297,6 +297,8 @@ PollsByState <- PollsByState[ which(PollsByState$state!='United States'), ]
 
 
 #### Merge Supporters/Opponents with Congress Data ####
+# I have not finished this
+
 # Prepare for merge
 CongressOpponents <- OpponentsFinal[which(OpponentsFinal$Congress == "Congress"),]
 CongressSupporters <- SupportersFinal[which(SupportersFinal$Congress == "Congress"),]
@@ -341,15 +343,44 @@ for(i in 1:541){
 test <- merge(d, CongressSupporters, by="Name", all=T)
 # Middle names seem to be tripping it up
 
-d$SupportGayMarriage <- NA
+## Still NAs
+d$stillNA <- ifelse(((is.na(d$Oppose)) ==T) & ((is.na(d$Support)) == T), TRUE, FALSE)
 
-# WTF?!! Why can't I write an ifelse loop?!!
-d$SupportGayMarriage <- ifelse(d$Support == 1, TRUE, NA)
-d$SupportGayMarriage <- ifelse(d$Oppose == 1, FALSE, d$SupportGayMarriage)
+# New DF
+dNA <- d[which(d$stillNA == T),]
+dNA$LastNameState <- paste(dNA$last_name, dNA$V2)
 
-                               ifelse(d$Oppose == 1, FALSE, NA))
+# Now mimick this in supports/opponents
+CongressOpponents$NameFinal <-  gsub(" III","",CongressOpponents$Name)
+CongressOpponents$NameFinal <-  gsub(", Jr.","",CongressOpponents$Name)
+CongressOpponents$LastName <- word(CongressOpponents$Name, -1)
+CongressOpponents$LastNameState <- paste(CongressOpponents$LastName, CongressOpponents$State)
 
-ifelse(d$Functional == "CO - Collector", 100 - (106/((log(79/AGE))^(1/.48))),
-       ifelse(d$Functional == "AR - Arterial", 100 - (109/((log(88/AGE))^(1/.58))),
-              100 - (97/((log(110/AGE))^(1/.61)))
-       ))
+CongressSupporters$NameFinal <-  gsub(" III","",CongressSupporters$Name)
+CongressSupporters$NameFinal <-  gsub(", Jr.","",CongressSupporters$Name)
+CongressSupporters$LastName <- word(CongressSupporters$Name, -1)
+CongressSupporters$LastNameState <- paste(CongressSupporters$LastName, CongressSupporters$State)
+
+## not working for some reason:
+
+dNA$Oppose <- NA
+
+# This will fill in the column from above with a 1 depending on whether the pol supports or not
+for(i in 1:70){
+  for (j in 1:271){
+    if((length(grep(dNA$LastNameState[i], CongressOpponents$LastNameState[j]))) > 0) d$Oppose[i] = 1
+  }
+}
+
+d$NASupport <- NA
+
+# This will fill in the column from above with a 1 depending on whether the pol supports or not
+for(i in 1:70){
+  for (j in 1:245){
+    if((length(grep(dNA$Name[i], CongressSupporters$LastNameState[j]))) > 0) d$Support[i] = 1
+  }
+}
+
+
+
+

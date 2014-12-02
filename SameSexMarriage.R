@@ -189,10 +189,11 @@ ratio <- as.data.frame.matrix(t)
 ratio$percentMale <- ratio$M / (ratio$M + ratio$F)
 d <- merge(d, ratio, by.x="state", by.y="row.names")
 d$PerOfCongOpp <- (d$SenatorsOppose + d$RepsOppose) / d$CongressMembers
+d$MaleCongress <- ifelse(d$percentMale.x == 1, TRUE, FALSE)
 t <- aggregate(d$PerOfCongOpp ~ d$MaleCongress, d, mean ) # makes a two-way table
 
 ggplot(t, aes(x=t$"d$MaleCongress", y=t$"d$PerOfCongOpp")) + geom_bar(colour="white", fill=middle_blue) + 
-  my.theme + ggtitle("All Male Delegations More Likely To Oppose") + xlab("All Male Congressional Delegation")+
+  my.theme + ggtitle("All-Male Delegations More Likely To Oppose") + xlab("All Male Congressional Delegation")+
   ylab("Percent of Congress Members Who Oppose") + 
   scale_y_continuous(labels = percent)
 
