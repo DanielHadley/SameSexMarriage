@@ -198,3 +198,20 @@ ggplot(t, aes(x=t$"d$MaleCongress", y=t$"d$PerOfCongOpp")) + geom_bar(colour="wh
   scale_y_continuous(labels = percent)
 
 ggsave("./plots/plot10.png", dpi=300, width=5, height=4)
+
+
+
+
+summary(lm(d$PercOfPolsSupp ~ d$support))$r.squared 
+ggplot(d, aes(x=d$PercOfPolsSupp, 
+              y=(d$support / 100))) +
+  geom_point(shape=1) + #scale_x_log10() +
+  scale_color_manual(values = c(purple, pinkish_red, dark_blue)) +
+  geom_smooth(method=lm, color = "grey") +
+  my.theme + ggtitle("Political Support Correlated to Public Opinion") + 
+  xlab("Percent of State's Politicans Who Support - R-Sq=.79")+
+  ylab("Percent Who Say They Support in Recent Polls") +
+  scale_y_continuous(labels = percent) +
+  scale_x_continuous(labels = percent)
+
+ggsave("./plots/plot11.png", dpi=300, width=5, height=4)
