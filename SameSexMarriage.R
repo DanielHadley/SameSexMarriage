@@ -215,3 +215,14 @@ ggplot(d, aes(x=d$PercOfPolsSupp,
   scale_x_continuous(labels = percent)
 
 ggsave("./plots/plot11.png", dpi=300, width=5, height=4)
+
+
+d$GovSenatorsOppo <- d$GovsOppose + d$SenatorsOppose
+d.top <- d[which(d$GovSenatorsOppo > 0 & d$X..opposition < 50),]
+ggplot(d.top, aes(x=reorder(d.top$state, -d.top$X..opposition), y=(d.top$X..opposition/100))) + geom_bar(colour="white", fill=middle_blue) + 
+  my.theme + ggtitle("A Statewide Politician Opposes But Public Opposition < 50%") + 
+  xlab("State With at Least One Senator or Governor Opposed")+
+  ylab("Percent Who Say They Oppose in Recent Polls") + 
+  scale_y_continuous(labels = percent)
+
+ggsave("./plots/plot12.png", dpi=300, width=5, height=4)
